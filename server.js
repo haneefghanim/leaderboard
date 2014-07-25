@@ -18,26 +18,38 @@ app.get('/', function(req, res) {
 	var slackCommand = '/leaderboard';
 
 	// Check for missing param
-	if (typeof req.query.text === 'undefined') {
+	// TODO: Switch over to using user ids, have a mapping b/w name and id
+	if (typeof req.query.text === 'undefined' || typeof req.query.user_name === 'undefined') {
 		res.send("Uh oh, something went wrong!");
 	}
 
 	// Initialize command array
 	var commands = req.query.text.split(" ");
+	var user = req.query.user_name;
 
 	// Help command
 	if (commands.length == 1 && commands[0] == "help") {
-		slackCommand = "_"+slackCommand+"_"; // formatting
 		var response = 	"*List of Leaderboard Commands:*\n" +
-						slackCommand + " create {game}\n" +
-						slackCommand + " delete {game}\n" +
-						slackCommand + " {player1} beat {player2} at {game}\n" +
-						slackCommand + " add {player} to {game}\n"+
-						slackCommand + " remove {player} from {game}\n"+
-						slackCommand + " display {game}\n" +
-						slackCommand + " help\n";
+						">"+sslackCommand + " create {game}\n" +
+						">"+sslackCommand + " delete {game}\n" +
+						">"+sslackCommand + " {player1} beat {player2} at {game}\n" +
+						">"+sslackCommand + " add {player} to {game}\n"+
+						">"+sslackCommand + " remove {player} from {game}\n"+
+						">"+sslackCommand + " display {game}\n" +
+						">"+sslackCommand + " help\n";
 
 		res.send(response);
+	}
+
+	// Create command
+	if (commands.length == 2 && commands[0] == "create") {
+		var gameName = commands[1];
+		if (redisClient.exists(gameName)) {
+			res.send("Whoops, *" + gameName + "* leaderboard already exists.");
+		}
+
+		redisClient.zadd(user, 1);
+		res.send(redisClient.zrevrangebyscore(gameName, "+inf", "-inf"));
 	}
 
 
