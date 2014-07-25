@@ -15,7 +15,7 @@ redisClient.auth(redisURL.auth.split(":")[1]);
 app.use(logfmt.requestLogger());
 
 app.get('/', function(req, res) {
-  res.send('Hello World!');
+  res.send(req.query);
 });
 
 app.get('/redis', function (req, res) {
