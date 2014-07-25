@@ -30,13 +30,13 @@ app.get('/', function(req, res) {
 	// Help command
 	if (commands.length == 1 && commands[0] == "help") {
 		var response = 	"*List of Leaderboard Commands:*\n" +
-						">"+sslackCommand + " create {game}\n" +
-						">"+sslackCommand + " delete {game}\n" +
-						">"+sslackCommand + " {player1} beat {player2} at {game}\n" +
-						">"+sslackCommand + " add {player} to {game}\n"+
-						">"+sslackCommand + " remove {player} from {game}\n"+
-						">"+sslackCommand + " display {game}\n" +
-						">"+sslackCommand + " help\n";
+						">"+slackCommand + " create {game}\n" +
+						">"+slackCommand + " delete {game}\n" +
+						">"+slackCommand + " {player1} beat {player2} at {game}\n" +
+						">"+slackCommand + " add {player} to {game}\n"+
+						">"+slackCommand + " remove {player} from {game}\n"+
+						">"+slackCommand + " display {game}\n" +
+						">"+slackCommand + " help\n";
 
 		res.send(response);
 	}
