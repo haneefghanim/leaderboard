@@ -8,13 +8,14 @@ var url = require('url');
 // Initialize app
 var app = express();
 var redisURL = url.parse(process.env.REDISCLOUD_URL);
-res.send(redisURL); // temporary
 var redisClient = redis.createClient(redisURL.port, redisURL.hostname, {no_ready_check: true});
 redisClient.auth(redisURL.auth.split(":")[1]);
 app.use(logfmt.requestLogger());
 
 // Main route
 app.get('/', function(req, res) {
+
+	res.send(redisURL); // temporary
 
 	var slackCommand = '/leaderboard';
 
