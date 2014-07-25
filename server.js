@@ -7,8 +7,8 @@ var url = require('url');
 
 // Initialize app
 var app = express();
-res.send(process.env.REDISCLOUD_URL); // temporary
 var redisURL = url.parse(process.env.REDISCLOUD_URL);
+res.send(redisURL); // temporary
 var redisClient = redis.createClient(redisURL.port, redisURL.hostname, {no_ready_check: true});
 redisClient.auth(redisURL.auth.split(":")[1]);
 app.use(logfmt.requestLogger());
