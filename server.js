@@ -27,7 +27,8 @@ app.get('/', function(req, res) {
 
 	// Help command
 	if (commands.length == 1 && commands[0] == "help") {
-		var response = 	"List of Leaderboard Commands:\n" +
+		slackCommand = "_"+slackCommand+"_"; // formatting
+		var response = 	"*List of Leaderboard Commands:*\n" +
 						slackCommand + " create {game}\n" +
 						slackCommand + " delete {game}\n" +
 						slackCommand + " {player1} beat {player2} at {game}\n" +
