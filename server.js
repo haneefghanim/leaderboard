@@ -7,6 +7,7 @@ var url = require('url');
 
 // Initialize app
 var app = express();
+res.send(process.env.REDISCLOUD_URL); // temporary
 var redisURL = url.parse(process.env.REDISCLOUD_URL);
 var redisClient = redis.createClient(redisURL.port, redisURL.hostname, {no_ready_check: true});
 redisClient.auth(redisURL.auth.split(":")[1]);
@@ -44,6 +45,7 @@ app.get('/', function(req, res) {
 	// Create command
 	if (commands.length == 2 && commands[0] == "create") {
 		var gameName = commands[1];
+		res.send(redisClient.exists(gameName));
 		if (redisClient.exists(gameName)) {
 			res.send("Whoops, *" + gameName + "* leaderboard already exists.");
 		}
