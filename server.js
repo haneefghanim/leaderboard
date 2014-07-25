@@ -15,6 +15,8 @@ app.use(logfmt.requestLogger());
 // Main route
 app.get('/', function(req, res) {
 
+	var slackCommand = '/leaderboard';
+
 	// Check for missing param
 	if (typeof req.query.text === 'undefined') {
 		res.send("Uh oh, something went wrong!");
@@ -22,6 +24,22 @@ app.get('/', function(req, res) {
 
 	// Initialize command array
 	var commands = req.query.text.split(" ");
+
+	// Help command
+	if (commands.length == 1 && commands[0] == "help") {
+		var response = 	"List of Leaderboard Commands:\n" +
+						slackCommand + " create {game}\n" +
+						slackCommand + " delete {game}\n" +
+						slackCommand + " {player1} beat {player2} at {game}\n" +
+						slackCommand + " add {player} to {game}\n"+
+						slackCommand + " remove {player} from {game}\n"+
+						slackCommand + " display {game}\n" +
+						slackCommand + " help\n";
+
+		res.send(response);
+	}
+
+
 	res.send(commands);
 });
 
