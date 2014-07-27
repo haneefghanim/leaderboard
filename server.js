@@ -39,7 +39,7 @@ app.get('/', function(req, res) {
 	var user = req.query.user_name;
 
 	// Help command
-	if ((commands.length == 1 && commands[0] == "help") || commands.length == 0) {
+	if (commands.length == 1 && commands[0] == "help") {
 		var response = 	"*List of Leaderboard Commands:*\n" +
 						">"+slackCommand + " create {game}\n" +
 						">"+slackCommand + " delete {game}\n" +
