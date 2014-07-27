@@ -148,7 +148,7 @@ app.get('/', function(req, res) {
 		redisClient.exists(gameName, function (err, value) {
 		    if (err) throw(err)
 		    if (value == true) {
-		    	redisClient.zrevrangebyscore([gameName, "+inf", "-inf"], function (err, list) {
+		    	redisClient.zrangebyscore([gameName, "-inf", "+inf"], function (err, list) {
 		    		var response = "*"+gameName+" leaderboard:*\n";
 		    		for (i = 0; i < list.length; i++) {
 		    			var row = ">" + (i+1) + ") " + list[i] + "\n";
@@ -164,24 +164,40 @@ app.get('/', function(req, res) {
 	}
 
 
-	// PLAYER BEAT PLAYER: TODO
+	// PLAYER BEAT PLAYER
 	if (commands.length == 5 && commands[1] == "beat" && commands[3] == "at") {
-		var gameName = commands[1];
+		var winner = commands[0];
+		var loser = commands[2]
+		var gameName = commands[4];
 
-		redisClient.zrevrangebyscore([gameName, "+inf", "-inf"], function (err, list) {
+		redisClient.zrangebyscore([gameName, "-inf", "+inf"], function (err, list) {
 			if (err) throw(err)
 			if (list.length > 1) {
-				var maxScore = parseInt(list[1]);
-				// Check if already in list
-				redisClient.zscore(gameName, playerName, function (err, score) {
-					if (err) throw(err)
-					if (score > 0) {
-						res.send("Whoops, *" + playerName + "* is already in leaderboard *" + gameName +"*.");
+				// Check if players are in list
+				var winnerIndex = list.indexOf(winner);
+				var loserIndex = list.indexOf(loser);
+				if (winnerIndex >= 0 && loserIndex >= 0) {
+					// Rearrange the leaderboard
+					if (winnerIndex > loserIndex) {
+						// Remove winner from board
+						list.splice(winnerIndex, 1);
+
+						// Add winner above loser
+						list.splice(loserIndex, 0, winner);
+
+						// Update rankings in redis
+						for (i = 0; i < list.length; i++) {
+							redisClient.zadd(gameName, i+1, list[i]);
+						}
+
+						res.send("*" + winner + "* took position #"+(loserIndex+1)+" from *" + loser + "* in *"+ gameName + "*!");
 					} else {
-				    	redisClient.zadd(gameName, maxScore+1, playerName); // add user to board
-				    	res.send("Added *" + playerName + "* to leaderboard *" + gameName + "*!");
+						// Don't rearrange
+						res.send("*" + winner + "* defended position #"+(winnerIndex+1)+" against *" + loser + "* in *"+ gameName + "*!");
 					}
-				});
+				} else {
+					res.send("Whoops, one or both of *" + winner + "* and *" + loser + "* are not in leaderboard *"+ gameName + "*.");
+				}
 
 			} else {
 				res.send("Whoops, *" + gameName + "* leaderboard does not exist.");
