@@ -52,6 +52,7 @@ app.get('/', function(req, res) {
 						">"+slackCommand + " remove {player} from {game}\n"+
 						">"+slackCommand + " {winner} beat {loser} at {game}\n" +
 						">"+slackCommand + " display {game}\n" +
+						">"+slackCommand + " show all\n" +
 						">"+slackCommand + " help\n";
 
 		res.send(response);
@@ -146,6 +147,19 @@ app.get('/', function(req, res) {
 	    return;
 	}
 
+	// SHOW ALL BOARDs
+	if (commands.length == 2 && commands[0] == "show" && commands[1] == "all") {
+    	redisClient.smembers(leaderboardsKey, function (err, list) {
+    		var response = "*All leaderboards:*\n";
+    		for (i = 0; i < list.length; i++) {
+    			var row = ">" + list[i] + "\n";
+    			response = response+row;
+    		}
+    		res.send(response);
+    	});
+		return;
+	}
+
 	// DISPLAY BOARD
 	if (commands.length == 2 && commands[0] == "display") {
 		var gameName = commands[1];
@@ -167,7 +181,6 @@ app.get('/', function(req, res) {
 		});
 		return;
 	}
-
 
 	// PLAYER BEAT PLAYER
 	if (commands.length == 5 && commands[1] == "beat" && commands[3] == "at") {
