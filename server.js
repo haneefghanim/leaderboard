@@ -206,9 +206,6 @@ app.get('/', function(req, res) {
 		return;
 	}
 
-	res.send(commands);
-	return;
-
 	res.send("Invalid command!  Type */leaderboard help* to see list of commands.");
 });
 
