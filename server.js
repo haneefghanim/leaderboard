@@ -21,6 +21,11 @@ if (typeof process.env.REDISCLOUD_URL === 'undefined') {
 	redisClient.auth(redisURL.auth.split(":")[1]);
 }
 
+// Redis error checking
+redisClient.on("error", function (err) {
+    console.log("Redis error:  " + err);
+});
+
 // Main route
 app.get('/', function(req, res) {
 
