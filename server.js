@@ -45,7 +45,7 @@ app.get('/', function(req, res) {
 						">"+slackCommand + " delete {game}\n" +
 						">"+slackCommand + " add {player} to {game}\n"+
 						">"+slackCommand + " remove {player} from {game}\n"+
-						">"+slackCommand + " {player1} beat {player2} at {game}\n" +
+						">"+slackCommand + " {winner} beat {loser} at {game}\n" +
 						">"+slackCommand + " display {game}\n" +
 						">"+slackCommand + " help\n";
 
