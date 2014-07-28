@@ -66,12 +66,14 @@ app.get('/', function(req, res) {
 		return;
 	}
 
+	var autoMessage = "\n_What is this? Type */leaderboard help* for more information!_"
+
 	// Create command: create {board}
 	if (commands.length == 2 && commands[0] == "create") {
 		leaderboard.create(commands[1], user, function (success, msg) {
 			res.send(msg);
 			if (success && !quiet) {
-				slack.sendToChannel(slackChannel, msg);
+				slack.sendToChannel(slackChannel, msg+autoMessage);
 			}
 		});
 		return;
@@ -82,7 +84,7 @@ app.get('/', function(req, res) {
 		leaderboard.delete(commands[1], function (success, msg) {
 			res.send(msg);
 			if (success && !quiet) {
-				slack.sendToChannel(slackChannel, msg);
+				slack.sendToChannel(slackChannel, msg+autoMessage);
 			}
 		});
 		return;
@@ -93,7 +95,7 @@ app.get('/', function(req, res) {
 		leaderboard.addUserToBoard(commands[3], commands[1], function (success, msg) {
 			res.send(msg);
 			if (success && !quiet) {
-				slack.sendToChannel(slackChannel, msg);
+				slack.sendToChannel(slackChannel, msg+autoMessage);
 			}
 		});
 	    return;
@@ -104,7 +106,7 @@ app.get('/', function(req, res) {
 		leaderboard.removeUserFromBoard(commands[3], commands[1], function (success, msg) {
 			res.send(msg);
 			if (success && !quiet) {
-				slack.sendToChannel(slackChannel, msg);
+				slack.sendToChannel(slackChannel, msg+autoMessage);
 			}
 		});
 	    return;
@@ -131,7 +133,7 @@ app.get('/', function(req, res) {
 		leaderboard.win(commands[4], commands[0], commands[2], function(success, msg) {
 			res.send(msg);
 			if (success && !quiet) {
-				slack.sendToChannel(slackChannel, msg);
+				slack.sendToChannel(slackChannel, msg+autoMessage);
 			}
 		});
 		return;
