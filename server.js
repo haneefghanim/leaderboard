@@ -2,35 +2,29 @@
 // Dependencies
 var express = require("express");
 var logfmt = require("logfmt");
-var redis = require('redis');
 var url = require('url');
+var leaderboardLib = require("./lib/leaderboard.js");
+var slackLib = require("./lib/slack.js");
 
 // Initialize app
 var app = express();
 app.use(logfmt.requestLogger());
 
-// Connect to Redis DB
+// Initialize leaderboard
+var leaderboard;
 if (typeof process.env.REDISCLOUD_URL === 'undefined') {
 	// Local environment
-	var redisURL = {hostname : "127.0.0.1", port : "6379"};
-	var redisClient = redis.createClient(redisURL.port, redisURL.hostname, {no_ready_check: true});
+	leaderboard = new leaderboardLib("127.0.0.1", "6379");
 } else {
 	// Production on Heroku
 	var redisURL = url.parse(process.env.REDISCLOUD_URL);
-	var redisClient = redis.createClient(redisURL.port, redisURL.hostname, {no_ready_check: true});
-	redisClient.auth(redisURL.auth.split(":")[1]);
+	leaderboard = new leaderboardLib(redisURL.hostname, redisURL.port, redisURL.auth.split(":")[1]);
 }
-
-// Redis error checking
-redisClient.on("error", function (err) {
-    console.log("Redis error:  " + err);
-});
 
 // Main route
 app.get('/', function(req, res) {
 
 	var slackCommand = '/leaderboard';
-	var leaderboardsKey = "leaderboards";
 
 	// Check for missing param
 	// TODO: Switch over to using user ids, have a mapping b/w name and id
@@ -59,168 +53,59 @@ app.get('/', function(req, res) {
 		return;
 	}
 
-	// CREATE
+	// Create command: create {board}
 	if (commands.length == 2 && commands[0] == "create") {
-		var gameName = commands[1];
-
-		redisClient.exists(gameName, function (err, value) {
-		    if (err) throw(err)
-		    if (value == true) {
-		    	res.send("Whoops, *" + gameName + "* leaderboard already exists.");
-		    } else {
-		    	redisClient.zadd(gameName, 1, user); // add user to new board
-		    	redisClient.sadd(leaderboardsKey, gameName); // add board to list of boards
-		    	res.send("Created leaderboard: *" + gameName + "*!");
-		    }
+		leaderboard.create(commands[1], user, function (success, msg) {
+			res.send(msg);
 		});
 		return;
 	}
 
-	// DELETE
+	// Delete command: delete {board}
 	if (commands.length == 2 && commands[0] == "delete") {
-		var gameName = commands[1];
-
-		redisClient.exists(gameName, function (err, value) {
-		    if (err) throw(err)
-		    if (value == true) {
-		    	redisClient.del(gameName); // delete board
-		    	redisClient.srem(leaderboardsKey, gameName); // remove board from list of boards
-		    	res.send("Deleted leaderboard: *" + gameName + "*!");
-		    } else {
-		    	res.send("Whoops, *" + gameName + "* leaderboard does not exist.");
-		    }
+		leaderboard.delete(commands[1], function (success, msg) {
+			res.send(msg);
 		});
 		return;
 	}
 
-	// ADD PLAYER
+	// Add user to board command: add {user} to {board}
 	if (commands.length == 4 && commands[0] == "add" && commands[2] == "to") {
-		var playerName = commands[1];
-		var gameName = commands[3];
-
-		redisClient.zrevrangebyscore([gameName, "+inf", "-inf", 'WITHSCORES'], function (err, list) {
-			if (err) throw(err)
-			if (list.length > 1) {
-				var maxScore = parseInt(list[1]);
-				// Check if already in list
-				redisClient.zscore(gameName, playerName, function (err, score) {
-					if (err) throw(err)
-					if (score > 0) {
-						res.send("Whoops, *" + playerName + "* is already in leaderboard *" + gameName +"*.");
-					} else {
-				    	redisClient.zadd(gameName, maxScore+1, playerName); // add user to board
-				    	res.send("Added *" + playerName + "* to leaderboard *" + gameName + "*!");
-					}
-				});
-
-			} else {
-				res.send("Whoops, *" + gameName + "* leaderboard does not exist.");
-			}
-	    });
+		leaderboard.addUserToBoard(commands[3], commands[1], function (success, msg) {
+			res.send(msg);
+		});
 	    return;
 	}
 
-	// REMOVE PLAYER
+	// Remove user from board command: remove {user} from {board}
 	if (commands.length == 4 && commands[0] == "remove" && commands[2] == "from") {
-		var playerName = commands[1];
-		var gameName = commands[3];
-
-		redisClient.zcard(gameName, function (err, length) {
-			if (err) throw(err)
-			if (length > 0) {
-				// Check if already in list
-				redisClient.zscore(gameName, playerName, function (err, score) {
-					if (err) throw(err)
-					if (score > 0) {
-						redisClient.zrem(gameName, length+1, playerName); // remove user from board
-				    	res.send("Removed *" + playerName + "* from leaderboard *" + gameName + "*!");
-					} else {
-				    	res.send("Whoops, *" + playerName + "* is not in leaderboard *" + gameName +"*.");
-
-					}
-				});
-
-			} else {
-				res.send("Whoops, *" + gameName + "* leaderboard does not exist.");
-			}
-	    });
+		leaderboard.removeUserFromBoard(commands[3], commands[1], function (success, msg) {
+			res.send(msg);
+		});
 	    return;
 	}
 
-	// SHOW ALL BOARDs
+	// Show all boards command: show all
 	if (commands.length == 2 && commands[0] == "show" && commands[1] == "all") {
-    	redisClient.smembers(leaderboardsKey, function (err, list) {
-    		var response = "*All leaderboards:*\n";
-    		for (i = 0; i < list.length; i++) {
-    			var row = ">" + list[i] + "\n";
-    			response = response+row;
-    		}
-    		res.send(response);
+    	leaderboard.showAll(function (success, msg) {
+    		res.send(msg);
     	});
 		return;
 	}
 
-	// DISPLAY BOARD
+	// Display board command: show {board}
 	if (commands.length == 2 && commands[0] == "display") {
-		var gameName = commands[1];
-
-		redisClient.exists(gameName, function (err, value) {
-		    if (err) throw(err)
-		    if (value == true) {
-		    	redisClient.zrangebyscore([gameName, "-inf", "+inf"], function (err, list) {
-		    		var response = "*"+gameName+" leaderboard:*\n";
-		    		for (i = 0; i < list.length; i++) {
-		    			var row = ">" + (i+1) + ") " + list[i] + "\n";
-		    			response = response+row;
-		    		}
-		    		res.send(response);
-	    	});
-		    } else {
-		    	res.send("Whoops, *" + gameName + "* leaderboard does not exist.");
-		    }
+		leaderboard.display(commands[1], function (success, msg) {
+			res.send(msg);
 		});
 		return;
 	}
 
-	// PLAYER BEAT PLAYER
+	// Player won command: {winner} beat {loser} at {board}
 	if (commands.length == 5 && commands[1] == "beat" && commands[3] == "at") {
-		var winner = commands[0];
-		var loser = commands[2]
-		var gameName = commands[4];
-
-		redisClient.zrangebyscore([gameName, "-inf", "+inf"], function (err, list) {
-			if (err) throw(err)
-			if (list.length > 1) {
-				// Check if players are in list
-				var winnerIndex = list.indexOf(winner);
-				var loserIndex = list.indexOf(loser);
-				if (winnerIndex >= 0 && loserIndex >= 0) {
-					// Rearrange the leaderboard
-					if (winnerIndex > loserIndex) {
-						// Remove winner from board
-						list.splice(winnerIndex, 1);
-
-						// Add winner above loser
-						list.splice(loserIndex, 0, winner);
-
-						// Update rankings in redis
-						for (i = 0; i < list.length; i++) {
-							redisClient.zadd(gameName, i+1, list[i]);
-						}
-
-						res.send("*" + winner + "* took position #"+(loserIndex+1)+" from *" + loser + "* in *"+ gameName + "*!");
-					} else {
-						// Don't rearrange
-						res.send("*" + winner + "* defended position #"+(winnerIndex+1)+" against *" + loser + "* in *"+ gameName + "*!");
-					}
-				} else {
-					res.send("Whoops, one or both of *" + winner + "* and *" + loser + "* are not in leaderboard *"+ gameName + "*.");
-				}
-
-			} else {
-				res.send("Whoops, *" + gameName + "* leaderboard does not exist.");
-			}
-	    });
+		leaderboard.win(commands[4], commands[0], commands[2], function(success, msg) {
+			res.send(msg);
+		});
 		return;
 	}
 
