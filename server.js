@@ -56,8 +56,8 @@ app.get('/', function(req, res) {
 						">"+slackCommand + " add {player} to {game}\n"+
 						">"+slackCommand + " remove {player} from {game}\n"+
 						">"+slackCommand + " {winner} beat {loser} at {game}\n" +
-						">"+slackCommand + " display {game}\n" +
-						">"+slackCommand + " show all\n" +
+						">"+slackCommand + " show {game}\n" +
+						">"+slackCommand + " list\n" +
 						">"+slackCommand + " help\n\n"+
 						"PS: You can add *--quiet* to the end of a command, in order to not broadcast it.\n"+
 						"You can also use */lb* as a shorthand for */leaderboard*\n";
@@ -112,8 +112,8 @@ app.get('/', function(req, res) {
 	    return;
 	}
 
-	// Show all boards command: show all
-	if (commands.length == 2 && commands[0] == "show" && commands[1] == "all") {
+	// Show all boards command: list
+	if (commands.length == 1 && commands[0] == "list") {
     	leaderboard.showAll(function (success, msg) {
     		res.send(msg);
     	});
@@ -121,7 +121,7 @@ app.get('/', function(req, res) {
 	}
 
 	// Display board command: show {board}
-	if (commands.length == 2 && commands[0] == "display") {
+	if (commands.length == 2 && commands[0] == "show") {
 		leaderboard.display(commands[1], function (success, msg) {
 			res.send(msg);
 		});
