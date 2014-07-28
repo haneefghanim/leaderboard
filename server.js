@@ -28,7 +28,7 @@ var slack = new slackLib(process.env.SLACK_API_TOKEN);
 app.get('/', function(req, res) {
 
 	var slackCommand = '/leaderboard';
-	var slackChannel = "general";
+	var slackChannel = "C024GR3KC";
 
 	// Check for missing param
 	// TODO: Switch over to using user ids, have a mapping b/w name and id
