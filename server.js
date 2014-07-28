@@ -21,10 +21,14 @@ if (typeof process.env.REDISCLOUD_URL === 'undefined') {
 	leaderboard = new leaderboardLib(redisURL.hostname, redisURL.port, redisURL.auth.split(":")[1]);
 }
 
+// Initialize slack model - need to define SLACK_API_TOKEN as an env variable
+var slack = new slackLib(process.env.SLACK_API_TOKEN);
+
 // Main route
 app.get('/', function(req, res) {
 
 	var slackCommand = '/leaderboard';
+	var slackChannel = "general";
 
 	// Check for missing param
 	// TODO: Switch over to using user ids, have a mapping b/w name and id
@@ -36,6 +40,13 @@ app.get('/', function(req, res) {
 	// Initialize command array
 	var commands = req.query.text.split(" ");
 	var user = req.query.user_name;
+	var quiet = false;
+
+	// Quiet switch: does not announce events to Slack
+	if (commands[commands.length-1] == "--quiet") {
+		commands.pop();
+		quiet = true;
+	}
 
 	// Help command
 	if (commands.length == 1 && commands[0] == "help") {
@@ -47,7 +58,9 @@ app.get('/', function(req, res) {
 						">"+slackCommand + " {winner} beat {loser} at {game}\n" +
 						">"+slackCommand + " display {game}\n" +
 						">"+slackCommand + " show all\n" +
-						">"+slackCommand + " help\n";
+						">"+slackCommand + " help\n\n"+
+						"PS: You can add *--quiet* to the end of a command, in order to not broadcast it.\n"+
+						"You can also use */lb* as a shorthand for */leaderboard*\n";
 
 		res.send(response);
 		return;
@@ -57,6 +70,9 @@ app.get('/', function(req, res) {
 	if (commands.length == 2 && commands[0] == "create") {
 		leaderboard.create(commands[1], user, function (success, msg) {
 			res.send(msg);
+			if (success && !quiet) {
+				slack.sendToChannel(slackChannel, msg);
+			}
 		});
 		return;
 	}
@@ -65,6 +81,9 @@ app.get('/', function(req, res) {
 	if (commands.length == 2 && commands[0] == "delete") {
 		leaderboard.delete(commands[1], function (success, msg) {
 			res.send(msg);
+			if (success && !quiet) {
+				slack.sendToChannel(slackChannel, msg);
+			}
 		});
 		return;
 	}
@@ -73,6 +92,9 @@ app.get('/', function(req, res) {
 	if (commands.length == 4 && commands[0] == "add" && commands[2] == "to") {
 		leaderboard.addUserToBoard(commands[3], commands[1], function (success, msg) {
 			res.send(msg);
+			if (success && !quiet) {
+				slack.sendToChannel(slackChannel, msg);
+			}
 		});
 	    return;
 	}
@@ -81,6 +103,9 @@ app.get('/', function(req, res) {
 	if (commands.length == 4 && commands[0] == "remove" && commands[2] == "from") {
 		leaderboard.removeUserFromBoard(commands[3], commands[1], function (success, msg) {
 			res.send(msg);
+			if (success && !quiet) {
+				slack.sendToChannel(slackChannel, msg);
+			}
 		});
 	    return;
 	}
@@ -105,6 +130,9 @@ app.get('/', function(req, res) {
 	if (commands.length == 5 && commands[1] == "beat" && commands[3] == "at") {
 		leaderboard.win(commands[4], commands[0], commands[2], function(success, msg) {
 			res.send(msg);
+			if (success && !quiet) {
+				slack.sendToChannel(slackChannel, msg);
+			}
 		});
 		return;
 	}
