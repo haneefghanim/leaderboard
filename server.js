@@ -28,7 +28,7 @@ var slack = new slackLib(process.env.SLACK_API_TOKEN);
 app.get('/', function(req, res) {
 
 	var slackCommand = '/leaderboard';
-	var slackChannel = "C024GR3KC"; // id of #general channel
+	var slackChannel = "C024GR3KE"; // id of #random channel
 
 	// Check for missing param
 	// TODO: Switch over to using user ids, have a mapping b/w name and id
@@ -59,7 +59,7 @@ app.get('/', function(req, res) {
 						">"+slackCommand + " show {game}\n" +
 						">"+slackCommand + " list\n" +
 						">"+slackCommand + " help\n\n"+
-						"PS: You can add *--shout* to the end of a command, in order to broadcast it to #general.\n"+
+						"PS: You can add *--shout* to the end of a command, in order to broadcast it to #random.\n"+
 						"You can also use */lb* as a shorthand for */leaderboard*\n";
 
 		res.send(response);
